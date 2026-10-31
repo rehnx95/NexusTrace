@@ -58,19 +58,30 @@ export default function Ingestion({ onIngested }) {
       setStatus({ kind: 'error', message: 'Upload at least one file.' })
       return
     }
-    setStatus({ kind: 'busy', message: 'Processing files — extracting entities and mapping relationships…' })
-    try {
-      const result = await ingestMutation.mutateAsync({ caseId: selectedCaseId, files, appendMode })
-      setStatus({
-        kind: 'success',
-        message: `Done — extracted entities, relationships, and wrote to graph.`
-      })
-      setFiles([])
-      if (fileInputRef.current) fileInputRef.current.value = ''
-      onIngested?.()
-    } catch (err) {
-      setStatus({ kind: 'error', message: err.message || 'Upload failed' })
-    }
+   setStatus({ kind: 'busy', message: 'Processing files — extracting entities and mapping relationships…' })
+try {
+  const texts = await Promise.all(
+    files.map(async (f) => ({ name: f.name, text: await f.text() }))
+  )
+  const isTabular = (n) => /\.(csv|tsv)$/i.test(n)
+  const firText = texts.filter((t) => !isTabular(t.name)).map((t) => t.text).join('\n\n')
+  const cdrText = texts.filter((t) => isTabular(t.name)).map((t) => t.text).join('\n')
+
+  const result = await ingestMutation.mutateAsync({
+    caseId: selectedCaseId, firText, cdrText, appendMode,
+  })
+  if (result.ok === false) throw new Error(result.error)
+
+  setStatus({
+    kind: 'success',
+    message: `Extracted ${result.people?.length || 0} people, ${result.locations?.length || 0} locations, ${result.vehicles?.length || 0} vehicles, ${result.phones?.length || 0} phones, ${result.organizations?.length || 0} organizations.`,
+  })
+  setFiles([])
+  if (fileInputRef.current) fileInputRef.current.value = ''
+  onIngested?.()
+} catch (err) {
+  setStatus({ kind: 'error', message: err.message || 'Upload failed' })
+}
   }
 
   async function clearCase() {
