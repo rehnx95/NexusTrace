@@ -60,21 +60,14 @@ export default function Ingestion({ onIngested }) {
     }
    setStatus({ kind: 'busy', message: 'Processing files — extracting entities and mapping relationships…' })
 try {
-  const texts = await Promise.all(
-    files.map(async (f) => ({ name: f.name, text: await f.text() }))
-  )
-  const isTabular = (n) => /\.(csv|tsv)$/i.test(n)
-  const firText = texts.filter((t) => !isTabular(t.name)).map((t) => t.text).join('\n\n')
-  const cdrText = texts.filter((t) => isTabular(t.name)).map((t) => t.text).join('\n')
-
   const result = await ingestMutation.mutateAsync({
-    caseId: selectedCaseId, firText, cdrText, appendMode,
+    caseId: selectedCaseId, files, appendMode,
   })
   if (result.ok === false) throw new Error(result.error)
 
   setStatus({
     kind: 'success',
-    message: `Extracted ${result.people?.length || 0} people, ${result.locations?.length || 0} locations, ${result.vehicles?.length || 0} vehicles, ${result.phones?.length || 0} phones, ${result.organizations?.length || 0} organizations.`,
+    message: `Processed ${result.files} file(s): extracted ${result.entities} entities and ${result.edges} edges. Phones: ${result.phones}; plates: ${result.plates}; valid CDR rows: ${result.cdr_valid_rows}.${result.rejected_files?.length ? ` Rejected: ${result.rejected_files.map((item) => item.filename).join(', ')}.` : ''}`,
   })
   setFiles([])
   if (fileInputRef.current) fileInputRef.current.value = ''

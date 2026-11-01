@@ -1,0 +1,1 @@
+"""Pretrained spaCy extraction adapters."""

@@ -141,11 +141,14 @@ export const useDeleteEdge = () => {
 export const useIngest = () => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ caseId, firText, cdrText, appendMode }) =>
-      api.ingest(caseId, firText, cdrText, appendMode),
+    mutationFn: ({ caseId, files, appendMode }) =>
+      api.ingestFiles(caseId, files, appendMode),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['graph'] })
       queryClient.invalidateQueries({ queryKey: ['entities'] })
+      queryClient.invalidateQueries({ queryKey: ['key-players'] })
+      queryClient.invalidateQueries({ queryKey: ['anomalies'] })
+      queryClient.invalidateQueries({ queryKey: ['audit-trail'] })
       queryClient.invalidateQueries({ queryKey: ['cases'] })
     },
   })
@@ -158,6 +161,9 @@ export const useClearCase = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['graph'] })
       queryClient.invalidateQueries({ queryKey: ['entities'] })
+      queryClient.invalidateQueries({ queryKey: ['key-players'] })
+      queryClient.invalidateQueries({ queryKey: ['anomalies'] })
+      queryClient.invalidateQueries({ queryKey: ['audit-trail'] })
       queryClient.invalidateQueries({ queryKey: ['cases'] })
     },
   })
