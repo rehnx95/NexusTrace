@@ -34,6 +34,29 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ fir_text, cdr_text, append_mode }),
     }),
+  ingestFiles: async (caseId, files, appendMode) => {
+    const form = new FormData()
+    form.set('append_mode', appendMode ? 'true' : 'false')
+    files.forEach((file) => form.append('files', file))
+    const res = await fetch(
+      `${API_URL}/cases/${caseId}/documents`,
+      { method: 'POST', body: form },
+    )
+    if (!res.ok) {
+      let detail = res.statusText
+      try {
+        const body = await res.json()
+        detail =
+          typeof body.detail === 'object'
+            ? JSON.stringify(body.detail)
+            : body.detail || detail
+      } catch {
+        // ignore malformed error responses
+      }
+      throw new Error(detail)
+    }
+    return res.json()
+  },
   clearCase: (caseId) => request(`/cases/${caseId}/clear`, { method: 'POST' }),
   entities: (caseId) => request(`/cases/${caseId}/entities`),
   allEntities: () => request('/entities/all'),
