@@ -11,7 +11,7 @@ venv/
 
 # Env files (never commit real secrets)
 .env
-.env.example
+backend/.env
 
 # OS/editor
 .DS_Store
